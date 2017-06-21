@@ -1,0 +1,43 @@
+#gameboard{
+
+	width:360px;
+	margin: 0 auto;
+
+}
+
+.row{
+	
+	clear:both;
+	overflow: hidden;
+
+}
+
+.square{
+	float:left;
+	width:119px;
+	height: 119px;
+	cursor: pointer;
+	
+}
+
+.bottom{
+   border-bottom: 1px solid black;
+}
+
+.right{
+   border-right: 1px solid black;
+}
+
+
+.ex{
+	color: red;
+	font-size: 80px;
+	text-align: center;
+
+}
+
+.oh{
+	color: blue;
+	font-size: 80px;
+	text-align: center;
+}

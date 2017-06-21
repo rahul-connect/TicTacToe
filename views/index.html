@@ -1,0 +1,272 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>TIC-TAC-TOE</title>
+<link href='css/style.css' rel='stylesheet'>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<script src='socket.io/socket.io.js'></script>
+<script src='js/script.js'></script>
+<style>
+	.opacity{
+		opacity: 0.5;
+	}
+</style>
+<script>
+var name = prompt("Enter your name:");
+if(name==''){
+name = 'Anonymous';	
+} 
+
+
+var socket = io.connect('http://localhost:3000',{query:'name='+name});
+
+
+var gameStarted = false,
+    turn = false,
+    symbol = '',
+    room =''
+    ;
+
+</script>
+</head>
+<body>
+<div id='gameboard'>
+
+ <div id="players">
+	<center><h1 id='opponents'></h1></center>
+	<center><h1 id='gameover'></h1></center>
+	<center><h2 id='status'></h2></center>
+
+</div><br>
+ <center><div id="playagain"><input type='button' id='again' style='display:none;' value='Play Again' onclick="playAgain()"></div></center><br>
+
+	<div class="row">
+		<div class='square bottom right' id='sq1' style=''></div>
+		<div class='square bottom right' id='sq2'></div>
+		<div class='square bottom' id='sq3'></div>
+	</div>
+	<div class="row">
+		<div class='square bottom right' id='sq4'></div>
+		<div class='square bottom right' id='sq5'></div>
+		<div class='square bottom' id='sq6'></div>
+	</div>
+	<div class="row">
+		<div class='square right' id='sq7'></div>
+		<div class='square right' id='sq8'></div>
+		<div class='square' id='sq9'></div>
+	</div>
+</div>
+	<script>
+		socket.on('connect', function (){
+
+
+    		socket.on('msg', function(data){
+				 $("#opponents").html(data.body);
+				});
+
+
+    		socket.on('start', function(data){
+			  gameStarted = true;
+			  if(data.myTurn) {
+			    turn = true;
+			    symbol = data.symbol;
+			    room = data.room;
+			     $("#status").html("<span style='color:green'>Make your move</span>");
+
+
+			  }
+			  else {
+			  	room = data.room;
+			    symbol = 'O';
+			    $("#status").html("<span style='color:orange'>Waiting for other player's move</span>");
+			  }
+			});
+
+			socket.on('opponents',function(data){
+				 $("#opponents").html(data.opponents);
+			});
+
+
+			socket.on('change',function(data){
+
+				$('#'+data.square_id).addClass(data.clas);
+				$('#'+data.square_id).html(data.symb);
+
+			});
+
+			socket.on('turn',function(data){
+				if(data.next==symbol){
+					 $("#status").html("<span style='color:green'>Make your move</span>");
+				     turn = data.myTurn;
+				}else{
+					 $("#status").html("<span style='color:orange'>Waiting for other player's move</span>");
+				}
+				
+			});
+
+
+			 $(".square").on('click',clickHandler);    
+   
+
+			function clickHandler(event){
+				 	if(turn){
+        		var squareSelected = $(this);
+        		var id = this.id
+
+        		if(squareSelected.hasClass('ex') || squareSelected.hasClass('oh')){
+        			alert('Already Selected !!');
+        		}else{
+        			if(symbol =='X'){
+        			squareSelected.addClass('ex');
+        			squareSelected.html(symbol);
+        			turn = false;
+        			socket.emit('move',{
+        				id:id,
+        				class:'ex',
+        				symbol:'X',
+        				room:room
+        			});
+        			$("#status").html("<span style='color:orange'>Waiting for other player's move</span>");
+        			if(playerWon({symbol:'ex',name:name}) == false){
+        				gameTie();    
+        			}
+        		
+
+
+        		}else{
+        			squareSelected.addClass('oh');
+        			var id = this.id
+        			squareSelected.addClass('oh');
+        			squareSelected.html(symbol);
+        			turn = false;
+        			socket.emit('move',{
+        				id:id,
+        				class:'oh',
+        				symbol:'O',
+        				room:room
+        			});
+        			$("#status").html("<span style='color:orange'>Waiting for other player's move</span>");
+        			if(playerWon({symbol:'oh',name:name}) == false){
+						gameTie(); 
+        			}
+        			
+        			
+        		} 
+        		  		
+        	
+        	}
+        		}else{
+
+        		alert('Not Your Turn');
+        	}
+
+			}
+
+
+
+
+		function playerWon(data){
+			if($('#sq1').hasClass(data.symbol) && $('#sq2').hasClass(data.symbol) && $('#sq3').hasClass(data.symbol) || 
+				$('#sq4').hasClass(data.symbol) && $('#sq5').hasClass(data.symbol) && $('#sq6').hasClass(data.symbol) || 
+				$('#sq7').hasClass(data.symbol) && $('#sq8').hasClass(data.symbol) && $('#sq9').hasClass(data.symbol) || 
+				$('#sq1').hasClass(data.symbol) && $('#sq4').hasClass(data.symbol) && $('#sq7').hasClass(data.symbol) || 
+				$('#sq2').hasClass(data.symbol) && $('#sq5').hasClass(data.symbol) && $('#sq8').hasClass(data.symbol) || 
+				$('#sq3').hasClass(data.symbol) && $('#sq6').hasClass(data.symbol) && $('#sq9').hasClass(data.symbol) || 
+				$('#sq1').hasClass(data.symbol) && $('#sq5').hasClass(data.symbol) && $('#sq9').hasClass(data.symbol) || 
+				$('#sq3').hasClass(data.symbol) && $('#sq5').hasClass(data.symbol) && $('#sq7').hasClass(data.symbol) 
+				){
+			
+				socket.emit('winner',{
+					name:data.name,
+					room:room
+				});
+				return true;
+			}else{
+				return false;
+			}
+
+		}
+
+
+		function gameTie(){
+			if( ($('#sq1').hasClass('ex') || $('#sq1').hasClass('oh')) && ($('#sq2').hasClass('ex') || $('#sq2').hasClass('oh')) &&
+				($('#sq3').hasClass('ex') || $('#sq3').hasClass('oh')) && ($('#sq4').hasClass('ex') || $('#sq4').hasClass('oh')) &&
+				($('#sq5').hasClass('ex') || $('#sq5').hasClass('oh')) && ($('#sq6').hasClass('ex') || $('#sq6').hasClass('oh')) &&
+				($('#sq7').hasClass('ex') || $('#sq7').hasClass('oh')) && ($('#sq8').hasClass('ex') || $('#sq8').hasClass('oh')) &&
+				($('#sq9').hasClass('ex') || $('#sq9').hasClass('oh'))
+				){
+
+					socket.emit('gameTie',{
+					room:room
+				});
+				
+
+			}
+		}
+
+	
+
+		socket.on('gameover',function(data){
+			$('#opponents').hide();
+			$("#gameover").html("<span style='color:red'>GAME OVER</span>");
+			$("#status").html(data.winner+' WINS');
+			$('#again').show();
+			$('.square').unbind('click',clickHandler);
+			$('.row').addClass('opacity');
+			
+		});
+
+		socket.on('gameTie',function(){
+			$('#opponents').hide();
+			$("#gameover").html("<span style='color:red'>GAME TIE</span>");
+			$('#again').show();
+			$('#status').html(' ');
+			$('.square').unbind('click',clickHandler);
+			$('.row').addClass('opacity');
+
+		});
+
+
+
+		socket.on('disconnect',function(data){
+			$('#opponents').hide();
+			$("#gameover").html("<span style='color:red'>"+data.name.toUpperCase()+" Left the Game !!</span>");
+			$('#status').html('<span style="color:green">You WON</span>');
+			$('.square').unbind('click',clickHandler);
+			$('.row').addClass('opacity');
+		
+		});
+
+		socket.on('playAgain',function(){
+			$('.square').removeClass('ex');
+			$('.square').removeClass('oh');
+			$('.row').removeClass('opacity');
+			$('.square').html(' ');
+			$('#again').hide();
+			$('#status').html(' ');
+			$('.square').bind('click',clickHandler);
+			$('#opponents').show();
+			$("#gameover").html(' ');
+			
+			
+			if(turn){
+				$("#status").html("<span style='color:green'>Make your move</span>");
+			}else{
+				$("#status").html("<span style='color:orange'>Waiting for other player's move</span>");
+			}
+
+		});
+
+
+        });
+
+		function playAgain(){
+			socket.emit('playAgain',{room:room});
+		}
+
+
+	</script>
+
+</body>
+</html>
